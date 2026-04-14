@@ -1,0 +1,15 @@
+services:
+  roomy-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8765:8765"
+    volumes:
+      - roomy-data:/data
+    environment:
+      ROOMY_DB_PATH: /data/traces.db
+    command: ["roomy", "serve", "--db", "/data/traces.db", "--host", "0.0.0.0", "--port", "8765"]
+
+volumes:
+  roomy-data:
