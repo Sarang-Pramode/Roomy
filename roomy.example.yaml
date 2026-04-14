@@ -1,0 +1,6 @@
+db_path: ./traces.db
+capture_raw: true
+redaction:
+  enabled: true
+  store_full_text: true
+  pii_email: false
