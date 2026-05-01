@@ -11,6 +11,8 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
+  # Run manually: Actions → "Publish to PyPI" → Run workflow (branch: main).
+  workflow_dispatch:
 
 permissions:
   id-token: write
