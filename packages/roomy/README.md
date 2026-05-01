@@ -1,13 +1,48 @@
-# Roomy (Python package `roomy`)
+# Roomy
 
-Published to PyPI as **`roomy-observability`**. Import in code as **`roomy`**.
+**Roomy** is a local-first observability toolkit for **LangChain** agents. It records what entered the model (messages, tools, retrievers), **token usage**, **latency**, and **structured traces** in **SQLite**, with a **CLI** and an optional **web UI** for inspection.
 
-Install from this directory in editable mode:
+## Install
 
 ```bash
-pip install -e ".[dev,api,openai]"
+pip install roomy-observability
 ```
 
-See the repository root [README.md](../../README.md) for usage.
+- **PyPI package:** `roomy-observability`
+- **Python import:** `import roomy`
+- **CLI:** `roomy` (e.g. `roomy serve`, `roomy sessions list`)
 
-**Author:** [Sarang Pramode](https://pramode.dev)
+Requires **Python 3.11+**.
+
+## Quick start
+
+```python
+from roomy import end_session, instrument_langchain
+
+bindings = instrument_langchain(app_name="my-agent", db_path="./traces.db")
+result = chain.invoke(
+    {"topic": "Hello"},
+    config={"callbacks": bindings.callbacks},
+)
+end_session(bindings.manager)
+```
+
+Use `wrap_agent(chain, bindings.manager)` if you prefer binding callbacks on a Runnable.
+
+## Optional extras
+
+| Extra | Purpose |
+| ----- | ------- |
+| `api` | FastAPI + Uvicorn (`roomy serve` for the inspector API) |
+| `openai` | `tiktoken` for better token estimates |
+| `dev` | Tests, ruff, mypy, build, twine |
+
+```bash
+pip install "roomy-observability[api,openai]"
+```
+
+## Documentation & source
+
+Full monorepo (sample agents, web app, architecture docs): **[github.com/Sarang-Pramode/Roomy](https://github.com/Sarang-Pramode/Roomy)**
+
+**Author:** [Sarang Pramode](https://pramode.dev) · **License:** MIT

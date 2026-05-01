@@ -9,4 +9,4 @@ from roomy.instrumentation.public_api import (
 
 __all__ = ["instrument_langchain", "wrap_agent", "end_session", "RoomyBindings", "__version__"]
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
