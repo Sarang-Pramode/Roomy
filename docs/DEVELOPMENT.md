@@ -98,18 +98,31 @@ Confirm: [https://pypi.org/project/roomy-observability/](https://pypi.org/projec
 
 ### Publishing from GitHub (recommended)
 
-The workflow [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml) runs when you **publish a GitHub Release** (not draft). It builds `packages/roomy` and uploads to PyPI using **Trusted Publishing** (no long-lived API token in GitHub secrets).
+The workflow [`.github/workflows/publish-pypi.yml`](../.github/workflows/publish-pypi.yml) runs when you **publish a GitHub Release**. It does **not** run on every push to `main` (only when you publish a release for a tag). It builds `packages/roomy` and uploads to PyPI using **Trusted Publishing** (OIDC — no API token in GitHub secrets).
 
-1. On [PyPI](https://pypi.org/manage/project/roomy-observability/settings/publishing/) → **Publishing** → add a trusted publisher:
-   - **PyPI Project:** `roomy-observability`
+#### One-time: GitHub
+
+1. Open **https://github.com/Sarang-Pramode/Roomy/settings/environments**
+2. **New environment** → name: **`release`** (must match the workflow and PyPI form).
+3. Optional: add protection rules (e.g. required reviewers) before production uploads.
+
+#### One-time: PyPI
+
+1. **https://pypi.org/manage/project/roomy-observability/settings/publishing/**
+2. **Add a new pending publisher** (GitHub) with exactly:
    - **Owner:** `Sarang-Pramode`
-   - **Repository:** `Roomy`
-   - **Workflow name:** `publish-pypi.yml`
-   - **Environment:** leave blank (unless you add a GitHub Environment later)
-2. On GitHub: bump version, update `CHANGELOG.md`, push to `main`.
-3. **Releases** → **Draft a new release** → choose tag `v0.x.y` (create new tag on `main`) → publish release.
+   - **Repository name:** `Roomy`
+   - **Workflow name:** `publish-pypi.yml` — not `workflow.yml`; the file lives at `.github/workflows/publish-pypi.yml`.
+   - **Environment name:** `release` — must match the GitHub Environment and `environment: release` in the workflow job.
 
-The workflow uploads the artifacts built from that tag’s tree.
+3. Click **Add**, then confirm the pending publisher (PyPI may ask you to verify).
+
+#### Each release
+
+1. On `main`: bump **`version`** in `packages/roomy/pyproject.toml` and `packages/roomy/src/roomy/__init__.py`, update **`CHANGELOG.md`**, commit, push.
+2. **GitHub → Releases → Draft a new release** → create or select tag **`vX.Y.Z`** targeting `main` → **Publish release**.
+
+The workflow runs once and uploads that commit’s tree to PyPI. The tag should match the version you set in `pyproject.toml`.
 
 ## Docker
 

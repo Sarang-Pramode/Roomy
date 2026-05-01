@@ -1,6 +1,10 @@
-# Publish to PyPI when a GitHub Release is published.
-# Setup (one-time): https://docs.pypi.org/trusted-publishers/
-# PyPI → roomy-observability → Settings → Publishing → add trusted publisher for this repo + workflow file.
+# Publish to PyPI via Trusted Publishing (OIDC). No PyPI token stored in GitHub secrets.
+#
+# Triggers when you publish a GitHub Release (not on every push to main).
+# Flow: bump version on main → push → GitHub → Releases → Draft release → choose tag v* → Publish release.
+#
+# PyPI form must match this file name: publish-pypi.yml
+# If PyPI lists an Environment, this job must set: environment: release (same name as on GitHub).
 
 name: Publish to PyPI
 
@@ -14,6 +18,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v4
 
