@@ -34,6 +34,7 @@ Open the UI at the URL Vite prints (API proxied to `http://127.0.0.1:8765`).
 
 ## Docs
 
+- [Status & roadmap checklist](docs/STATUS.md)
 - [Design](docs/DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development](docs/DEVELOPMENT.md)
