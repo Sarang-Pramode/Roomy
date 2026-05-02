@@ -4,17 +4,21 @@ LangGraph ReAct agent: OpenAI chat + optional fetch_webpage tool for URL-grounde
 Run from repo root (with roomy + examples extras installed):
 
   cp examples/.env.example examples/.env   # then edit OPENAI_API_KEY
-  # Optional: export ROOMY_DB_PATH=... (default matches roomy serve: ./roomy_traces.db in cwd)
   python examples/web_chatbot.py
+  python examples/web_chatbot.py --open-dashboard   # also open the Vite UI in a browser
+
+Traces default to ``<repo>/examples/traces.db``; ``ROOMY_DB_PATH`` overrides if set (shell or .env).
 
 Type messages at the prompt. Use /quit to exit.
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import sys
+import webbrowser
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -31,6 +35,26 @@ if _SRC.is_dir() and str(_SRC) not in sys.path:
 load_dotenv(_ROOT / "examples" / ".env")
 
 from roomy import end_session, instrument_langchain  # noqa: E402
+
+
+def _default_trace_db_path() -> Path:
+    """Stable trace file for this example (unless ROOMY_DB_PATH is already set)."""
+    return (_ROOT / "examples" / "traces.db").resolve()
+
+
+def _resolve_trace_db() -> str:
+    """
+    Set ROOMY_DB_PATH for this process and any subprocess that reads os.environ.
+
+    Precedence: existing ROOMY_DB_PATH (shell or .env) else examples/traces.db under repo root.
+    """
+    raw = os.environ.get("ROOMY_DB_PATH", "").strip()
+    if raw:
+        path = Path(raw).expanduser().resolve()
+    else:
+        path = _default_trace_db_path()
+    os.environ["ROOMY_DB_PATH"] = str(path)
+    return str(path)
 
 
 def _strip_html(html: str) -> str:
@@ -82,15 +106,34 @@ def _print_reply(messages: list[BaseMessage]) -> None:
         print("\nAssistant:", last)
 
 
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="LangGraph + OpenAI example with Roomy tracing.")
+    p.add_argument(
+        "--open-dashboard",
+        "-o",
+        action="store_true",
+        help="Open the Roomy web UI (Vite dev server, default http://127.0.0.1:5173/)",
+    )
+    p.add_argument("--ui-host", default="127.0.0.1", help="Host for --open-dashboard (default 127.0.0.1)")
+    p.add_argument("--ui-port", type=int, default=5173, help="Port for --open-dashboard (default 5173)")
+    return p.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+
     if not os.environ.get("OPENAI_API_KEY"):
         print("Missing OPENAI_API_KEY. Copy examples/.env.example to examples/.env and set your key.", file=sys.stderr)
         sys.exit(1)
 
-    # Same default as `roomy serve` / RoomyConfig when ROOMY_DB_PATH is unset: cwd ./roomy_traces.db
-    db = os.environ.get("ROOMY_DB_PATH", "./roomy_traces.db")
-    os.environ.setdefault("ROOMY_DB_PATH", db)
+    db = _resolve_trace_db()
     Path(db).parent.mkdir(parents=True, exist_ok=True)
+
+    if args.open_dashboard:
+        url = f"http://{args.ui_host}:{args.ui_port}/"
+        print("Opening dashboard:", url)
+        if not webbrowser.open(url):
+            print("Could not open a browser; run: roomy dashboard", file=sys.stderr)
 
     model_name = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     llm = ChatOpenAI(model=model_name, temperature=0.2)
@@ -100,7 +143,9 @@ def main() -> None:
     cfg = {"callbacks": bindings.callbacks}
 
     print("Web-aware chatbot (LangGraph + OpenAI). Commands: /quit, /new")
-    print("Traces DB:", os.path.abspath(db), "(same file roomy serve must use)")
+    print("ROOMY_DB_PATH set for this process:", db)
+    print("Match the API in another terminal: roomy serve --db", repr(db))
+    print("Open UI anytime: roomy dashboard")
     print("Roomy session:", bindings.manager.session_id)
     print("Tip: ask about a page, e.g. “Summarize https://example.com”\n")
 
@@ -127,7 +172,6 @@ def main() -> None:
             messages.pop()
             continue
         messages = list(result["messages"])
-        # Log tool outputs briefly for terminal UX
         for m in messages[-4:]:
             if isinstance(m, ToolMessage):
                 prev = m.content[:200] + ("…" if len(str(m.content)) > 200 else "")
@@ -135,7 +179,7 @@ def main() -> None:
         _print_reply(messages)
 
     end_session(bindings.manager)
-    print("Goodbye. Inspect traces with: roomy sessions list --db", repr(db))
+    print("Goodbye. CLI: roomy sessions list --db", repr(db))
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ pip install roomy-observability
 
 - **PyPI package:** `roomy-observability`
 - **Python import:** `import roomy`
-- **CLI:** `roomy` (e.g. `roomy serve`, `roomy sessions list`)
+- **CLI:** `roomy` (e.g. `roomy serve`, `roomy sessions list`, `roomy dashboard` to open the web UI in a browser)
 
 Requires **Python 3.11+**.
 

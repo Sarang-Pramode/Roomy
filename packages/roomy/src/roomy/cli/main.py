@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import webbrowser
 from pathlib import Path
 
 import typer
@@ -92,6 +93,21 @@ def tokens_totals(
         f"output_tokens: {row['outp'] or 0}\n"
         f"cost_est_usd:  {row['cost'] or 0}"
     )
+
+
+@app.command("dashboard")
+def dashboard(
+    host: str = typer.Option("127.0.0.1", "--host", help="Vite dev server host (apps/web npm run dev)"),
+    port: int = typer.Option(5173, "--port", help="Vite dev server port"),
+    path: str = typer.Option("/", "--path", help="Path on the dev server (default /)"),
+) -> None:
+    """Open the Roomy web UI in your browser (start `npm run dev` in apps/web first)."""
+    suffix = path if path.startswith("/") else f"/{path}"
+    url = f"http://{host}:{port}{suffix}"
+    typer.echo(f"Opening {url}")
+    if not webbrowser.open(url):
+        typer.echo("Could not launch a browser; open the URL manually.", err=True)
+        raise typer.Exit(1)
 
 
 @app.command("serve")

@@ -34,7 +34,7 @@ Open the UI at the URL Vite prints (API proxied to `http://127.0.0.1:8765`).
 
 ## Examples
 
-- [LangGraph + OpenAI web chatbot](examples/README.md) (`examples/web_chatbot.py`) — `.env` for API keys, `fetch_webpage` tool, Roomy tracing.
+- [LangGraph + OpenAI web chatbot](examples/README.md) (`examples/web_chatbot.py`) — `.env` for API keys, `fetch_webpage` tool, auto `examples/traces.db`, `roomy dashboard` / `--open-dashboard`.
 
 ## Docs
 

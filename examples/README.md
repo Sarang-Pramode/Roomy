@@ -24,36 +24,55 @@ A **LangGraph** ReAct agent using **OpenAI** with a **`fetch_webpage`** tool so 
 
 ### Run the chatbot
 
-From the **repo root** (same working directory you use for `roomy serve`):
+From the **repo root**:
 
 ```bash
 python examples/web_chatbot.py
 ```
 
-By default this writes to **`./roomy_traces.db`** in the current directory — the same file `roomy serve` reads when you do **not** pass `--db` / `ROOMY_DB_PATH`. To use a different file (for example `examples/traces.db`), set the variable **for both** the API and the chatbot:
+The script sets **`ROOMY_DB_PATH`** for its own process to **`examples/traces.db`** under the repo (absolute path). You do **not** need to export it for the chatbot. Optional: set **`ROOMY_DB_PATH`** in your shell or in `examples/.env` to override.
+
+Open the dashboard in your browser when the agent starts (Vite must already be running, see below):
 
 ```bash
-export ROOMY_DB_PATH="$PWD/examples/traces.db"
+python examples/web_chatbot.py --open-dashboard
+# or: python examples/web_chatbot.py -o
 ```
+
+From any terminal, after `npm run dev` is up:
+
+```bash
+roomy dashboard
+```
+
+Optional flags: `roomy dashboard --port 5173 --host 127.0.0.1`
 
 - **`/new`** — clear conversation  
 - **`/quit`** — exit and flush Roomy session  
 
 ### Inspect traces (CLI)
 
+Use the **same** database file the script printed (`roomy serve --db "..."` or `examples/traces.db`):
+
 ```bash
-roomy sessions list --db "$ROOMY_DB_PATH"
-roomy sessions show <session-id> --db "$ROOMY_DB_PATH"
+roomy sessions list --db examples/traces.db
+roomy sessions show <session-id> --db examples/traces.db
+```
+
+Or export once per shell:
+
+```bash
+export ROOMY_DB_PATH="$PWD/examples/traces.db"
+roomy sessions list
 ```
 
 ### Roomy API + web UI (three terminals)
 
-**Terminal 1 — traces API**
+**Terminal 1 — traces API** (use the same DB path as the chatbot; copy from the script’s startup line or use):
 
 ```bash
-cd /path/to/Roomy   # repo root — same cwd as the chatbot terminal
-roomy serve --host 127.0.0.1 --port 8765
-# or: roomy serve --db "$PWD/examples/traces.db" ... if you prefer a dedicated DB file
+cd /path/to/Roomy
+roomy serve --db "$PWD/examples/traces.db" --host 127.0.0.1 --port 8765
 ```
 
 **Terminal 2 — React UI**
@@ -64,16 +83,15 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (e.g. `http://127.0.0.1:5173`). The dev server proxies API calls to port **8765**.
-
 **Terminal 3 — chatbot**
 
 ```bash
 cd /path/to/Roomy
 python examples/web_chatbot.py
+# optional: python examples/web_chatbot.py --open-dashboard
 ```
 
-Use the **same current directory** and the same `ROOMY_DB_PATH` (if you set it) for `roomy serve` and the chatbot so the UI reads the same SQLite file.
+The dev server proxies `/sessions`, `/steps`, etc. to port **8765**.
 
 ### Safety
 
