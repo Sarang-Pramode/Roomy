@@ -35,10 +35,12 @@ Use `wrap_agent(chain, bindings.manager)` if you prefer binding callbacks on a R
 | ----- | ------- |
 | `api` | FastAPI + Uvicorn (`roomy serve` for the inspector API) |
 | `openai` | `tiktoken` for better token estimates |
+| `examples` | LangGraph + OpenAI + dotenv + httpx (for repo examples under `examples/`) |
 | `dev` | Tests, ruff, mypy, build, twine |
 
 ```bash
 pip install "roomy-observability[api,openai]"
+pip install "roomy-observability[api,openai,examples]"   # LangGraph example deps
 ```
 
 ## Documentation & source
