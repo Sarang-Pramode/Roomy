@@ -22,6 +22,8 @@ This document aligns the repo with the **Roomy observability MVP** Cursor plan (
 ### Phase 2 — Local web UI
 - [x] FastAPI read API (sessions, steps, segments, raw, findings, export, diff helper)
 - [x] Vite + React + TS + Tailwind + shadcn-style UI: sessions, timeline, step detail, composition bar, raw tab
+- [x] **Upstream context:** `GET /steps/{id}/upstream` + LLM step detail panel (tool/retrieval since previous LLM; heuristic)
+- [x] **Segment diff UI:** `/sessions/:sessionId/diff` — compare two LLM steps (uses existing diff API)
 
 ### Phase 3 — Diagnostics
 - [x] Segment diff helper + API route
@@ -41,9 +43,8 @@ This document aligns the repo with the **Roomy observability MVP** Cursor plan (
 
 ## Partially done (needs more work to match spec intent)
 
-- [ ] **Phase 4 — Correlation UX:** Link “this retrieval / tool output **fed** this LLM step” explicitly in the UI (beyond listing rows on a step).
+- [ ] **Phase 4 — Correlation (deeper):** Graph view, “inserted vs returned” doc counts, stronger guarantees than step_index window heuristic.
 - [ ] **Phase 4 — Memory:** First-class capture/UI for memory reads/writes (schema hooks exist; product depth does not).
-- [ ] **Phase 3 — Diff in UI:** Step-to-step diff surfaced as a dedicated view (API exists; UI is minimal).
 - [ ] **Phase 2 — Charts:** Treemap / richer composition viz (stacked bar is minimal).
 - [ ] **Packaged UI:** Prebuilt static assets in wheel or single-command “UI + API” story (today: `roomy serve` + separate `apps/web` dev build).
 - [ ] **Test & types:** Broad pytest coverage; stricter mypy on public APIs.
@@ -55,12 +56,11 @@ This document aligns the repo with the **Roomy observability MVP** Cursor plan (
 
 Ordered roughly by leverage:
 
-1. **Correlation panel (Phase 4)** — Graph or table: retrieval/tool steps → consuming LLM step(s); optional “inserted vs returned” doc counts.
-2. **Step diff UI (Phase 3)** — Pick two steps; show segment/token delta in the browser.
-3. **More agents (Phase 0–4)** — LangGraph + RAG example under `agents/` to stress-test capture.
-4. **Memory events (Phase 4)** — `memory` step type events + UI filter.
-5. **Redaction presets (Phase 5)** — Config profiles; optional “no full text” mode documented end-to-end.
-6. **Hardening (Phase 5)** — Fuzzier LangChain versions; concurrency stress; migration tests.
+1. **More agents (Phase 0–4)** — LangGraph + RAG example under `agents/` to stress-test capture and upstream heuristics.
+2. **Memory events (Phase 4)** — `memory` step type events + UI filter.
+3. **Redaction presets (Phase 5)** — Config profiles; optional “no full text” mode documented end-to-end.
+4. **Hardening (Phase 5)** — Fuzzier LangChain versions; concurrency stress; migration tests.
+5. **Correlation v2** — Richer graph / explicit producer→consumer links when LangChain exposes stable run IDs in stored metadata.
 
 ---
 

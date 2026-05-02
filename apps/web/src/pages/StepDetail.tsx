@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { fetchRaw, fetchSegments, fetchStep } from "@/api/client";
+import { fetchRaw, fetchSegments, fetchStep, fetchUpstream } from "@/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -54,6 +54,12 @@ export function StepDetailPage() {
     queryFn: () => fetchRaw(stepId),
     enabled: !!stepId,
     retry: false,
+  });
+  const stypeEarly = (step.data as Record<string, unknown> | undefined)?.step_type;
+  const upstream = useQuery({
+    queryKey: ["upstream", stepId],
+    queryFn: () => fetchUpstream(stepId),
+    enabled: !!stepId && stypeEarly === "llm",
   });
 
   if (step.isLoading) return <p className="p-6 text-sm text-zinc-500">Loading step…</p>;
@@ -127,6 +133,69 @@ export function StepDetailPage() {
           <CompositionBar summary={summary} />
         </CardContent>
       </Card>
+
+      {String(data.step_type) === "llm" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Upstream context (heuristic)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-zinc-600">
+            <p className="text-xs text-zinc-500">
+              Tool and retrieval steps that ran after the previous LLM call and before this one (same session). Useful
+              for tracing where external context likely entered the prompt.
+            </p>
+            {upstream.isLoading && <p>Loading…</p>}
+            {(upstream.data ?? []).length === 0 && !upstream.isLoading && (
+              <p className="text-zinc-500">No tool or retrieval steps in this window.</p>
+            )}
+            {(upstream.data ?? []).length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Summary</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(upstream.data ?? []).map((u) => (
+                    <TableRow key={String(u.step_id)}>
+                      <TableCell className="tabular-nums">{Number(u.step_index)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{String(u.step_type)}</Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xl text-xs">
+                        {u.step_type === "tool" && Array.isArray(u.tool_calls) && u.tool_calls[0] ? (
+                          <span>
+                            <span className="font-medium">{String((u.tool_calls[0] as Record<string, unknown>).tool_name)}</span>
+                            {" · "}
+                            {String((u.tool_calls[0] as Record<string, unknown>).tool_output_preview ?? "").slice(0, 120)}
+                          </span>
+                        ) : null}
+                        {u.step_type === "retrieval" && Array.isArray(u.retrieval_events) && u.retrieval_events[0] ? (
+                          <span>
+                            {String((u.retrieval_events[0] as Record<string, unknown>).retriever_name)} ·{" "}
+                            {String((u.retrieval_events[0] as Record<string, unknown>).query_text ?? "").slice(0, 120)}
+                          </span>
+                        ) : null}
+                        {u.step_type === "memory" ? <span className="text-zinc-500">memory step</span> : null}
+                        <div className="mt-1">
+                          <Link
+                            className="text-zinc-900 underline-offset-2 hover:underline"
+                            to={`/sessions/${sessionId}/steps/${String(u.step_id)}`}
+                          >
+                            Open step
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="segments">
         <TabsList>

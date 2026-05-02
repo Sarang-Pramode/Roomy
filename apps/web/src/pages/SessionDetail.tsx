@@ -37,6 +37,12 @@ export function SessionDetailPage() {
         Agent <span className="font-medium text-zinc-900">{meta.agent_name}</span> · {meta.started_at}
       </p>
 
+      <p className="text-sm">
+        <Link className="text-zinc-900 underline-offset-4 hover:underline" to={`/sessions/${sessionId}/diff`}>
+          Compare two LLM steps (segment diff)
+        </Link>
+      </p>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Findings</CardTitle>

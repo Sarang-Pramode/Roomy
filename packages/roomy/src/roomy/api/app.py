@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
+from roomy.api.upstream import list_upstream_context_steps
 from roomy.diagnostics.diff import diff_llm_segments
 from roomy.diagnostics.rules import export_session_markdown
 from roomy.storage.sqlite_store import SqliteStore
@@ -100,6 +101,14 @@ def create_app(db_path: str) -> FastAPI:
     @app.get("/steps/{step_id}/segments")
     def step_segments(step_id: str) -> list[dict[str, Any]]:
         return _segments_for_step(step_id)
+
+    @app.get("/steps/{step_id}/upstream")
+    def step_upstream(step_id: str) -> list[dict[str, Any]]:
+        """Tool/retrieval/memory steps since the previous LLM step (heuristic context sources)."""
+        rows = list_upstream_context_steps(store, step_id)
+        if rows is None:
+            raise HTTPException(404, "step not found")
+        return rows
 
     @app.get("/sessions/{session_id}/findings")
     def session_findings(session_id: str) -> list[dict[str, Any]]:

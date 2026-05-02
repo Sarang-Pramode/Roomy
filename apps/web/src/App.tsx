@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Link, Navigate, Route, Routes } from "react-router-dom";
 import { SessionDetailPage } from "@/pages/SessionDetail";
 import { SessionsPage } from "@/pages/Sessions";
+import { StepDiffPage } from "@/pages/StepDiff";
 import { StepDetailPage } from "@/pages/StepDetail";
 
 const qc = new QueryClient();
@@ -21,6 +22,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<SessionsPage />} />
           <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
+          <Route path="/sessions/:sessionId/diff" element={<StepDiffPage />} />
           <Route path="/sessions/:sessionId/steps/:stepId" element={<StepDetailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

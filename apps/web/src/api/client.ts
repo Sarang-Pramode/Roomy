@@ -78,3 +78,26 @@ export function fetchRaw(stepId: string) {
 export function fetchFindings(sessionId: string) {
   return getJson<FindingRow[]>(`/sessions/${sessionId}/findings`);
 }
+
+export type UpstreamStep = Record<string, unknown> & {
+  step_id: string;
+  step_type: string;
+  step_index: number;
+  tool_calls?: Record<string, unknown>[];
+  retrieval_events?: Record<string, unknown>[];
+};
+
+export function fetchUpstream(stepId: string) {
+  return getJson<UpstreamStep[]>(`/steps/${stepId}/upstream`);
+}
+
+export type SessionDiffResponse = {
+  added_segments: Record<string, unknown>[];
+  removed_segments: Record<string, unknown>[];
+  token_count_delta: number;
+};
+
+export function fetchSessionDiff(sessionId: string, a: string, b: string) {
+  const q = new URLSearchParams({ a, b });
+  return getJson<SessionDiffResponse>(`/sessions/${sessionId}/diff?${q.toString()}`);
+}
