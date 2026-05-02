@@ -93,6 +93,16 @@ python examples/web_chatbot.py
 
 The dev server proxies `/sessions`, `/steps`, etc. to port **8765**.
 
+### “This site can’t be reached” / `ERR_CONNECTION_REFUSED` on port 5173
+
+Port **5173** is the **Vite** dev server (`npm run dev` in `apps/web`). If you close that terminal, nothing listens on 5173 anymore — start it again:
+
+```bash
+cd apps/web && npm install && npm run dev
+```
+
+`roomy dashboard` checks the port first; use `roomy dashboard --skip-check` only if you intentionally want to open the URL without verifying.
+
 ### Safety
 
 - `fetch_webpage` is for **local development** only; it fetches arbitrary URLs you ask for. Do not expose this script on the public internet without hardening.

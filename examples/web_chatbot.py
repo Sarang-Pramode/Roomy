@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import socket
 import sys
 import webbrowser
 from pathlib import Path
@@ -106,6 +107,14 @@ def _print_reply(messages: list[BaseMessage]) -> None:
         print("\nAssistant:", last)
 
 
+def _vite_listening(host: str, port: int, *, timeout_s: float = 1.5) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout_s):
+            return True
+    except OSError:
+        return False
+
+
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="LangGraph + OpenAI example with Roomy tracing.")
     p.add_argument(
@@ -131,9 +140,18 @@ def main() -> None:
 
     if args.open_dashboard:
         url = f"http://{args.ui_host}:{args.ui_port}/"
-        print("Opening dashboard:", url)
-        if not webbrowser.open(url):
-            print("Could not open a browser; run: roomy dashboard", file=sys.stderr)
+        if not _vite_listening(args.ui_host, args.ui_port):
+            print(
+                f"No dev server on {args.ui_host}:{args.ui_port} (browser would show connection refused).\n"
+                "From the repo:  cd apps/web && npm install && npm run dev\n"
+                "API (separate terminal):  roomy serve --db <same traces.db> --port 8765\n"
+                "Then:  roomy dashboard   or re-run with --open-dashboard",
+                file=sys.stderr,
+            )
+        else:
+            print("Opening dashboard:", url)
+            if not webbrowser.open(url):
+                print("Could not open a browser; run: roomy dashboard", file=sys.stderr)
 
     model_name = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
     llm = ChatOpenAI(model=model_name, temperature=0.2)

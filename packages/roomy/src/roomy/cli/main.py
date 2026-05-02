@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import webbrowser
 from pathlib import Path
 
@@ -17,6 +18,14 @@ app.add_typer(sessions_app, name="sessions")
 
 def _db(db: str | None) -> str:
     return db or os.environ.get("ROOMY_DB_PATH", "./roomy_traces.db")
+
+
+def _port_accepting_connections(host: str, port: int, *, timeout_s: float = 1.5) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout_s):
+            return True
+    except OSError:
+        return False
 
 
 @sessions_app.command("list")
@@ -100,10 +109,27 @@ def dashboard(
     host: str = typer.Option("127.0.0.1", "--host", help="Vite dev server host (apps/web npm run dev)"),
     port: int = typer.Option(5173, "--port", help="Vite dev server port"),
     path: str = typer.Option("/", "--path", help="Path on the dev server (default /)"),
+    skip_check: bool = typer.Option(
+        False,
+        "--skip-check",
+        help="Open the browser even if nothing is listening (default: verify port first)",
+    ),
 ) -> None:
     """Open the Roomy web UI in your browser (start `npm run dev` in apps/web first)."""
     suffix = path if path.startswith("/") else f"/{path}"
     url = f"http://{host}:{port}{suffix}"
+    if not skip_check and not _port_accepting_connections(host, port):
+        typer.echo(f"Nothing is accepting connections on {host}:{port} (ERR_CONNECTION_REFUSED).", err=True)
+        typer.echo(
+            "Start the web UI from the Roomy repo:\n"
+            "  cd apps/web && npm install && npm run dev\n"
+            "In another terminal, start the API (use the same trace DB as your agent):\n"
+            "  roomy serve --db path/to/traces.db --host 127.0.0.1 --port 8765\n"
+            "Then run: roomy dashboard\n"
+            "Or open with: roomy dashboard --skip-check",
+            err=True,
+        )
+        raise typer.Exit(1)
     typer.echo(f"Opening {url}")
     if not webbrowser.open(url):
         typer.echo("Could not launch a browser; open the URL manually.", err=True)
