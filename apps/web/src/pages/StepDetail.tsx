@@ -1,45 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { fetchRaw, fetchSegments, fetchStep, fetchUpstream } from "@/api/client";
+import { fetchFindings, fetchRaw, fetchSegments, fetchStep, fetchUpstream } from "@/api/client";
+import { CompositionDonut } from "@/components/trace/CompositionDonut";
+import type { SegmentSummary } from "@/components/trace/ContextWindowCard";
+import { ContextWindowCard } from "@/components/trace/ContextWindowCard";
+import { FindingsStrip } from "@/components/trace/FindingsStrip";
+import { SegmentTimeline } from "@/components/trace/SegmentTimeline";
+import { SegmentsDataTable } from "@/components/trace/SegmentsDataTable";
+import { TopSegmentsList } from "@/components/trace/TopSegmentsList";
+import { UpstreamContextCard } from "@/components/trace/UpstreamContextCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-type Summary = {
-  total_input_tokens_estimated?: number;
-  percent_by_segment_type?: Record<string, number>;
-  top_segments?: { segment_type: string; token_count: number | null }[];
-};
-
-function CompositionBar({ summary }: { summary: Summary | null }) {
-  const pct = summary?.percent_by_segment_type;
-  if (!pct || Object.keys(pct).length === 0) return <p className="text-sm text-zinc-500">No segment summary.</p>;
-  const entries = Object.entries(pct).sort((a, b) => b[1] - a[1]);
-  const palette = ["bg-zinc-800", "bg-zinc-500", "bg-zinc-400", "bg-zinc-300", "bg-zinc-200"];
-  return (
-    <div className="space-y-2">
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-zinc-100">
-        {entries.map(([k, v], i) => (
-          <div
-            key={k}
-            title={`${k}: ${v.toFixed(1)}%`}
-            className={palette[i % palette.length]}
-            style={{ width: `${Math.max(v, 0)}%` }}
-          />
-        ))}
-      </div>
-      <ul className="flex flex-wrap gap-3 text-xs text-zinc-600">
-        {entries.map(([k, v], i) => (
-          <li key={k} className="flex items-center gap-1">
-            <span className={`h-2 w-2 rounded-full ${palette[i % palette.length]}`} />
-            {k} ({v.toFixed(0)}%)
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 export function StepDetailPage() {
   const { sessionId = "", stepId = "" } = useParams();
@@ -55,6 +27,11 @@ export function StepDetailPage() {
     enabled: !!stepId,
     retry: false,
   });
+  const findings = useQuery({
+    queryKey: ["findings", sessionId],
+    queryFn: () => fetchFindings(sessionId),
+    enabled: !!sessionId,
+  });
   const stypeEarly = (step.data as Record<string, unknown> | undefined)?.step_type;
   const upstream = useQuery({
     queryKey: ["upstream", stepId],
@@ -63,181 +40,122 @@ export function StepDetailPage() {
   });
 
   if (step.isLoading) return <p className="p-6 text-sm text-zinc-500">Loading step…</p>;
-  if (step.isError) return <p className="p-6 text-sm text-red-600">Step not found.</p>;
+  if (step.isError) return <p className="p-6 text-sm text-red-400">Step not found.</p>;
 
   const data = step.data as Record<string, unknown>;
   const llm = data.llm_call as Record<string, string | null> | undefined;
-  let summary: Summary | null = null;
+  let summary: SegmentSummary | null = null;
   if (llm?.segment_summary_json) {
     try {
-      summary = JSON.parse(llm.segment_summary_json) as Summary;
+      summary = JSON.parse(llm.segment_summary_json) as SegmentSummary;
     } catch {
       summary = null;
     }
   }
 
+  const segList = segments.data ?? [];
+
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 pb-16">
       <div className="flex flex-wrap items-baseline gap-3 text-sm">
-        <Link to="/" className="text-zinc-500 hover:text-zinc-800">
+        <Link to="/" className="text-zinc-500 hover:text-zinc-300">
           Sessions
         </Link>
-        <span className="text-zinc-300">/</span>
-        <Link to={`/sessions/${sessionId}`} className="text-zinc-500 hover:text-zinc-800">
+        <span className="text-zinc-600">/</span>
+        <Link to={`/sessions/${sessionId}`} className="text-zinc-500 hover:text-zinc-300">
           {sessionId.slice(0, 8)}…
         </Link>
-        <span className="text-zinc-300">/</span>
-        <span className="font-mono font-medium text-zinc-900">step {String(data.step_index)}</span>
-        <Badge variant="outline">{String(data.step_type)}</Badge>
+        <span className="text-zinc-600">/</span>
+        <span className="font-mono font-medium text-zinc-100">step {String(data.step_index)}</span>
+        <Badge variant="outline" className="border-zinc-700 text-zinc-300">
+          {String(data.step_type)}
+        </Badge>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="border-zinc-800 bg-zinc-900/60 text-zinc-100">
+        <CardHeader className="pb-2">
           <CardTitle className="text-base">Overview</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-zinc-500">Latency</p>
-            <p className="text-lg font-medium tabular-nums">{data.latency_ms != null ? `${data.latency_ms} ms` : "—"}</p>
+            <p className="text-lg font-medium tabular-nums text-zinc-100">
+              {data.latency_ms != null ? `${data.latency_ms} ms` : "—"}
+            </p>
           </div>
           <div>
             <p className="text-zinc-500">Input tokens (rep / est)</p>
-            <p className="text-lg font-medium tabular-nums">
-              {llm
-                ? `${llm.input_tokens_reported ?? "—"} / ${llm.input_tokens_estimated ?? "—"}`
-                : "—"}
+            <p className="text-lg font-medium tabular-nums text-zinc-100">
+              {llm ? `${llm.input_tokens_reported ?? "—"} / ${llm.input_tokens_estimated ?? "—"}` : "—"}
             </p>
           </div>
           <div>
             <p className="text-zinc-500">Output tokens (rep / est)</p>
-            <p className="text-lg font-medium tabular-nums">
-              {llm
-                ? `${llm.output_tokens_reported ?? "—"} / ${llm.output_tokens_estimated ?? "—"}`
-                : "—"}
+            <p className="text-lg font-medium tabular-nums text-zinc-100">
+              {llm ? `${llm.output_tokens_reported ?? "—"} / ${llm.output_tokens_estimated ?? "—"}` : "—"}
             </p>
           </div>
           <div>
             <p className="text-zinc-500">Cost (est. USD)</p>
-            <p className="text-lg font-medium tabular-nums">
+            <p className="text-lg font-medium tabular-nums text-zinc-100">
               {llm?.cost_estimate_usd != null ? `$${Number(llm.cost_estimate_usd).toFixed(5)}` : "—"}
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Context composition</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CompositionBar summary={summary} />
-        </CardContent>
-      </Card>
-
       {String(data.step_type) === "llm" && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Upstream context (heuristic)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-zinc-600">
-            <p className="text-xs text-zinc-500">
-              Tool and retrieval steps that ran after the previous LLM call and before this one (same session). Useful
-              for tracing where external context likely entered the prompt.
-            </p>
-            {upstream.isLoading && <p>Loading…</p>}
-            {(upstream.data ?? []).length === 0 && !upstream.isLoading && (
-              <p className="text-zinc-500">No tool or retrieval steps in this window.</p>
-            )}
-            {(upstream.data ?? []).length > 0 && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>#</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Summary</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(upstream.data ?? []).map((u) => (
-                    <TableRow key={String(u.step_id)}>
-                      <TableCell className="tabular-nums">{Number(u.step_index)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{String(u.step_type)}</Badge>
-                      </TableCell>
-                      <TableCell className="max-w-xl text-xs">
-                        {u.step_type === "tool" && Array.isArray(u.tool_calls) && u.tool_calls[0] ? (
-                          <span>
-                            <span className="font-medium">{String((u.tool_calls[0] as Record<string, unknown>).tool_name)}</span>
-                            {" · "}
-                            {String((u.tool_calls[0] as Record<string, unknown>).tool_output_preview ?? "").slice(0, 120)}
-                          </span>
-                        ) : null}
-                        {u.step_type === "retrieval" && Array.isArray(u.retrieval_events) && u.retrieval_events[0] ? (
-                          <span>
-                            {String((u.retrieval_events[0] as Record<string, unknown>).retriever_name)} ·{" "}
-                            {String((u.retrieval_events[0] as Record<string, unknown>).query_text ?? "").slice(0, 120)}
-                          </span>
-                        ) : null}
-                        {u.step_type === "memory" ? <span className="text-zinc-500">memory step</span> : null}
-                        <div className="mt-1">
-                          <Link
-                            className="text-zinc-900 underline-offset-2 hover:underline"
-                            to={`/sessions/${sessionId}/steps/${String(u.step_id)}`}
-                          >
-                            Open step
-                          </Link>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="space-y-4 lg:col-span-2">
+              <ContextWindowCard summary={summary} />
+              <SegmentTimeline segments={segList} />
+            </div>
+            <div className="space-y-4">
+              <TopSegmentsList summary={summary} />
+              <Card className="border-zinc-800 bg-zinc-900/60 text-zinc-100">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold">Composition</CardTitle>
+                  <p className="text-xs font-normal text-zinc-500">Same data as the bar, radial view.</p>
+                </CardHeader>
+                <CardContent className="flex justify-center py-2">
+                  <CompositionDonut summary={summary} />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {findings.data && findings.data.length > 0 && <FindingsStrip findings={findings.data} stepId={stepId} />}
+        </>
       )}
 
-      <Tabs defaultValue="segments">
-        <TabsList>
-          <TabsTrigger value="segments">Segments</TabsTrigger>
-          <TabsTrigger value="raw">Raw</TabsTrigger>
+      {String(data.step_type) === "llm" && (
+        <UpstreamContextCard sessionId={sessionId} upstream={upstream.data ?? []} loading={upstream.isLoading} />
+      )}
+
+      <Tabs defaultValue="segments" className="w-full">
+        <TabsList className="border border-zinc-800 bg-zinc-900 p-1 text-zinc-400">
+          <TabsTrigger
+            value="segments"
+            className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-none"
+          >
+            Segments
+          </TabsTrigger>
+          <TabsTrigger
+            value="raw"
+            className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-none"
+          >
+            Raw JSON
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="segments">
+        <TabsContent value="segments" className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
           {segments.isLoading && <p className="text-sm text-zinc-500">Loading segments…</p>}
-          {(segments.data ?? []).length === 0 && !segments.isLoading && (
-            <p className="text-sm text-zinc-500">No segments (non-LLM step or capture pending).</p>
-          )}
-          {(segments.data ?? []).length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="text-right">Tokens</TableHead>
-                  <TableHead>Preview</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(segments.data ?? []).map((r) => (
-                  <TableRow key={r.segment_id}>
-                    <TableCell className="tabular-nums">{r.order_index}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{r.segment_type}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{r.token_count ?? "—"}</TableCell>
-                    <TableCell className="max-w-xl whitespace-pre-wrap text-xs text-zinc-700">
-                      {r.text_preview}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          {!segments.isLoading && <SegmentsDataTable segments={segList} />}
         </TabsContent>
-        <TabsContent value="raw">
+        <TabsContent value="raw" className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
           {raw.isError && <p className="text-sm text-zinc-500">No raw LLM payload for this step.</p>}
           {raw.data && (
-            <pre className="max-h-[480px] overflow-auto rounded-lg border border-zinc-200 bg-zinc-50 p-4 font-mono text-xs leading-relaxed text-zinc-800">
+            <pre className="max-h-[520px] overflow-auto rounded-lg border border-zinc-800 bg-zinc-950 p-4 font-mono text-xs leading-relaxed text-zinc-300">
               {JSON.stringify(raw.data, null, 2)}
             </pre>
           )}

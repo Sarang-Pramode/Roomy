@@ -11,21 +11,23 @@ export default function App() {
   return (
     <QueryClientProvider client={qc}>
       <BrowserRouter>
-        <header className="border-b border-zinc-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-            <Link to="/" className="text-sm font-semibold tracking-tight text-zinc-900">
-              Roomy
-            </Link>
-            <span className="text-xs text-zinc-400">LangChain context observatory</span>
-          </div>
-        </header>
-        <Routes>
-          <Route path="/" element={<SessionsPage />} />
-          <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
-          <Route path="/sessions/:sessionId/diff" element={<StepDiffPage />} />
-          <Route path="/sessions/:sessionId/steps/:stepId" element={<StepDetailPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <div className="min-h-screen bg-zinc-950 text-zinc-100">
+          <header className="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur">
+            <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+              <Link to="/" className="text-sm font-semibold tracking-tight text-zinc-100">
+                Roomy
+              </Link>
+              <span className="text-xs text-zinc-500">LangChain context observatory</span>
+            </div>
+          </header>
+          <Routes>
+            <Route path="/" element={<SessionsPage />} />
+            <Route path="/sessions/:sessionId" element={<SessionDetailPage />} />
+            <Route path="/sessions/:sessionId/diff" element={<StepDiffPage />} />
+            <Route path="/sessions/:sessionId/steps/:stepId" element={<StepDetailPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </BrowserRouter>
     </QueryClientProvider>
   );

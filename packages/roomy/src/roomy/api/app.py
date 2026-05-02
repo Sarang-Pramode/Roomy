@@ -17,6 +17,7 @@ from roomy.storage.sqlite_store import SqliteStore
 def create_app(db_path: str) -> FastAPI:
     if not Path(db_path).exists():
         Path(db_path).touch()
+    resolved_db_path = str(Path(db_path).resolve())
     store = SqliteStore(db_path)
     app = FastAPI(title="Roomy API", version="0.1.0")
     app.add_middleware(
@@ -27,8 +28,10 @@ def create_app(db_path: str) -> FastAPI:
     )
 
     @app.get("/health")
-    def health() -> dict[str, str]:
-        return {"status": "ok"}
+    def health() -> dict[str, Any]:
+        row = store.query_one("SELECT COUNT(*) AS c FROM sessions")
+        n = int(row["c"] or 0) if row else 0
+        return {"status": "ok", "db_path": resolved_db_path, "session_count": n}
 
     @app.get("/sessions")
     def list_sessions() -> list[dict[str, Any]]:

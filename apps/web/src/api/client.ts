@@ -6,6 +6,16 @@ async function getJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type HealthResponse = {
+  status: string;
+  db_path: string;
+  session_count: number;
+};
+
+export function fetchHealth() {
+  return getJson<HealthResponse>("/health");
+}
+
 export type SessionRow = {
   session_id: string;
   agent_name: string;
@@ -36,6 +46,8 @@ export type SegmentRow = {
   llm_call_id: string;
   order_index: number;
   segment_type: string;
+  source_kind?: string | null;
+  source_name?: string | null;
   text_preview: string | null;
   token_count: number | null;
   byte_count: number | null;

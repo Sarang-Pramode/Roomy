@@ -12,6 +12,23 @@ def test_sqlite_store_migrations(tmp_path) -> None:
     store.close()
 
 
+def test_health_includes_db_path(tmp_path) -> None:
+    from fastapi.testclient import TestClient
+
+    from roomy.api.app import create_app
+
+    db = str(tmp_path / "api.db")
+    app = create_app(db)
+    client = TestClient(app)
+    r = client.get("/health")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "ok"
+    assert "db_path" in body
+    assert body["db_path"].endswith("api.db")
+    assert body.get("session_count") == 0
+
+
 def test_trace_manager_session(tmp_path) -> None:
     from roomy.config.settings import RoomyConfig
 

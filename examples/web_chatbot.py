@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import warnings
 import re
 import socket
 import sys
@@ -26,7 +27,10 @@ from dotenv import load_dotenv
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
+
+# LangGraph 1.x warns; `langchain.agents.create_agent` is not available on all langchain versions yet.
+warnings.filterwarnings("ignore", message=".*create_react_agent has been moved.*")
+from langgraph.prebuilt import create_react_agent  # noqa: E402
 
 _ROOT = Path(__file__).resolve().parents[1]
 _SRC = _ROOT / "packages" / "roomy" / "src"

@@ -31,32 +31,34 @@ export function SessionDetailPage() {
   });
 
   if (s.isLoading || steps.isLoading) return <p className="p-6 text-sm text-zinc-500">Loading…</p>;
-  if (s.isError) return <p className="p-6 text-sm text-red-600">Session not found.</p>;
+  if (s.isError) return <p className="p-6 text-sm text-red-400">Session not found.</p>;
 
   const meta = s.data as Record<string, string>;
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 pb-16">
       <div className="flex flex-wrap items-baseline gap-3">
-        <Link to="/" className="text-sm text-zinc-500 hover:text-zinc-800">
+        <Link to="/" className="text-sm text-zinc-500 hover:text-zinc-300">
           Sessions
         </Link>
-        <span className="text-zinc-300">/</span>
-        <h1 className="font-mono text-lg font-semibold">{sessionId.slice(0, 8)}…</h1>
-        <Badge variant="outline">{meta.status}</Badge>
+        <span className="text-zinc-600">/</span>
+        <h1 className="font-mono text-lg font-semibold text-zinc-100">{sessionId.slice(0, 8)}…</h1>
+        <Badge variant="outline" className="border-zinc-700 text-zinc-300">
+          {meta.status}
+        </Badge>
       </div>
-      <p className="text-sm text-zinc-600">
-        Agent <span className="font-medium text-zinc-900">{meta.agent_name}</span> · {meta.started_at}
+      <p className="text-sm text-zinc-500">
+        Agent <span className="font-medium text-zinc-200">{meta.agent_name}</span> · {meta.started_at}
       </p>
 
       <p className="text-sm">
-        <Link className="text-zinc-900 underline-offset-4 hover:underline" to={`/sessions/${sessionId}/diff`}>
+        <Link className="text-violet-400 underline-offset-4 hover:underline" to={`/sessions/${sessionId}/diff`}>
           Compare two LLM steps (segment diff)
         </Link>
       </p>
 
-      <Card>
+      <Card className="border-zinc-800 bg-zinc-900/60 text-zinc-100">
         <CardHeader>
-          <CardTitle className="text-base">Findings</CardTitle>
+          <CardTitle className="text-base text-zinc-100">Findings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           {findings.isLoading && <p className="text-zinc-500">Loading findings…</p>}
@@ -64,51 +66,67 @@ export function SessionDetailPage() {
             <p className="text-zinc-500">No findings for this session.</p>
           )}
           {(findings.data ?? []).map((f) => (
-            <div key={f.finding_id} className="rounded-md border border-zinc-100 bg-zinc-50/80 p-3">
+            <div key={f.finding_id} className="rounded-md border border-zinc-800 bg-zinc-950/60 p-3">
               <div className="flex items-center gap-2">
                 <Badge variant={f.severity === "warning" ? "default" : "secondary"}>{f.severity}</Badge>
                 <span className="font-mono text-xs text-zinc-500">{f.finding_type}</span>
               </div>
-              <p className="mt-1 text-zinc-800">{f.explanation}</p>
+              <p className="mt-1 text-zinc-300">{f.explanation}</p>
             </div>
           ))}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-zinc-800 bg-zinc-900/60 text-zinc-100">
         <CardHeader>
-          <CardTitle className="text-base">Step timeline</CardTitle>
+          <CardTitle className="text-base text-zinc-100">Step timeline</CardTitle>
+          <p className="text-xs font-normal font-medium text-zinc-500">
+            Open an <span className="text-violet-400">llm</span> step for the context dashboard (composition, segments, timeline).
+          </p>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Latency</TableHead>
-                <TableHead>Status</TableHead>
+              <TableRow className="border-zinc-800 hover:bg-transparent">
+                <TableHead className="text-zinc-500">#</TableHead>
+                <TableHead className="text-zinc-500">Type</TableHead>
+                <TableHead className="text-zinc-500">Latency</TableHead>
+                <TableHead className="text-zinc-500">Status</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(steps.data ?? []).map((st) => (
-                <TableRow key={st.step_id}>
-                  <TableCell className="tabular-nums">{st.step_index}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{st.step_type}</Badge>
-                  </TableCell>
-                  <TableCell className="tabular-nums text-zinc-600">{st.latency_ms ?? "—"} ms</TableCell>
-                  <TableCell>{st.status}</TableCell>
-                  <TableCell className="text-right">
-                    <Link
-                      className="text-sm text-zinc-900 underline-offset-4 hover:underline"
-                      to={`/sessions/${sessionId}/steps/${st.step_id}`}
-                    >
-                      Open
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {(steps.data ?? []).map((st) => {
+                const isLlm = st.step_type === "llm";
+                return (
+                  <TableRow
+                    key={st.step_id}
+                    className={`border-zinc-800 ${isLlm ? "bg-violet-950/25 hover:bg-violet-950/35" : "hover:bg-zinc-800/40"}`}
+                  >
+                    <TableCell className="tabular-nums text-zinc-400">{st.step_index}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={
+                          isLlm ? "border-violet-500/50 text-violet-300" : "border-zinc-700 text-zinc-400"
+                        }
+                      >
+                        {st.step_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="tabular-nums text-zinc-500">{st.latency_ms ?? "—"} ms</TableCell>
+                    <TableCell className="text-zinc-400">{st.status}</TableCell>
+                    <TableCell className="text-right">
+                      <Link
+                        className={`text-sm underline-offset-4 hover:underline ${isLlm ? "text-violet-400" : "text-zinc-400"}`}
+                        to={`/sessions/${sessionId}/steps/${st.step_id}`}
+                      >
+                        {isLlm ? "Open trace" : "Open"}
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

@@ -93,6 +93,16 @@ python examples/web_chatbot.py
 
 The dev server proxies `/sessions`, `/steps`, etc. to port **8765**.
 
+### Sessions list is empty in the UI
+
+The UI loads sessions from the SQLite file **`roomy serve`** was started with—not from your Python process. If **`web_chatbot.py`** writes to `examples/traces.db` (default) but you ran **`roomy serve`** without **`--db`**, the API uses a different default database and the list stays empty. Use the same path everywhere, for example:
+
+```bash
+roomy serve --db "$PWD/examples/traces.db" --host 127.0.0.1 --port 8765
+```
+
+After upgrading Roomy, the Sessions page shows **API database** (from `GET /health`) so you can confirm which file the UI is reading.
+
 ### “This site can’t be reached” / `ERR_CONNECTION_REFUSED` on port 5173
 
 Port **5173** is the **Vite** dev server (`npm run dev` in `apps/web`). If you close that terminal, nothing listens on 5173 anymore — start it again:

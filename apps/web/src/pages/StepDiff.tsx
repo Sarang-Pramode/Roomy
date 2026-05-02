@@ -12,6 +12,9 @@ type DiffPayload = {
   token_count_delta: number;
 };
 
+const selectClass =
+  "min-w-[280px] rounded-md border border-zinc-700 bg-zinc-950 px-2 py-2 font-mono text-xs text-zinc-200 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500";
+
 export function StepDiffPage() {
   const { sessionId = "" } = useParams();
   const steps = useQuery({
@@ -33,36 +36,32 @@ export function StepDiffPage() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-6 pb-16">
       <div className="flex flex-wrap items-baseline gap-3 text-sm">
-        <Link to="/" className="text-zinc-500 hover:text-zinc-800">
+        <Link to="/" className="text-zinc-500 hover:text-zinc-300">
           Sessions
         </Link>
-        <span className="text-zinc-300">/</span>
-        <Link to={`/sessions/${sessionId}`} className="text-zinc-500 hover:text-zinc-800">
+        <span className="text-zinc-600">/</span>
+        <Link to={`/sessions/${sessionId}`} className="text-zinc-500 hover:text-zinc-300">
           {sessionId.slice(0, 8)}…
         </Link>
-        <span className="text-zinc-300">/</span>
-        <span className="font-medium text-zinc-900">Compare LLM steps</span>
+        <span className="text-zinc-600">/</span>
+        <span className="font-medium text-zinc-200">Compare LLM steps</span>
       </div>
 
-      <Card>
+      <Card className="border-zinc-800 bg-zinc-900/60 text-zinc-100">
         <CardHeader>
-          <CardTitle className="text-base">Select two LLM steps</CardTitle>
+          <CardTitle className="text-base text-zinc-100">Select two LLM steps</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
-          <p className="text-zinc-600">
-            Compares <strong>context segments</strong> between two model calls (same session). Pick earlier step as
-            &quot;Before&quot;, later as &quot;After&quot;.
+          <p className="text-zinc-400">
+            Compares <strong className="text-zinc-200">context segments</strong> between two model calls (same session). Pick
+            earlier step as &quot;Before&quot;, later as &quot;After&quot;.
           </p>
           <div className="flex flex-wrap items-end gap-4">
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-zinc-500">Before (step id)</span>
-              <select
-                className="min-w-[280px] rounded-md border border-zinc-200 bg-white px-2 py-2 font-mono text-xs"
-                value={a}
-                onChange={(e) => setA(e.target.value)}
-              >
+              <select className={selectClass} value={a} onChange={(e) => setA(e.target.value)}>
                 <option value="">—</option>
                 {llmSteps.map((s) => (
                   <option key={s.step_id} value={s.step_id}>
@@ -73,11 +72,7 @@ export function StepDiffPage() {
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-medium text-zinc-500">After (step id)</span>
-              <select
-                className="min-w-[280px] rounded-md border border-zinc-200 bg-white px-2 py-2 font-mono text-xs"
-                value={b}
-                onChange={(e) => setB(e.target.value)}
-              >
+              <select className={selectClass} value={b} onChange={(e) => setB(e.target.value)}>
                 <option value="">—</option>
                 {llmSteps.map((s) => (
                   <option key={`b-${s.step_id}`} value={s.step_id}>
@@ -87,21 +82,21 @@ export function StepDiffPage() {
               </select>
             </label>
           </div>
-          {a === b && a ? <p className="text-amber-700">Choose two different steps.</p> : null}
+          {a === b && a ? <p className="text-amber-400">Choose two different steps.</p> : null}
         </CardContent>
       </Card>
 
       {diff.isFetching && <p className="text-sm text-zinc-500">Computing diff…</p>}
-      {diff.isError && <p className="text-sm text-red-600">Could not load diff (need two LLM steps with segments).</p>}
+      {diff.isError && <p className="text-sm text-red-400">Could not load diff (need two LLM steps with segments).</p>}
       {diff.data && (
-        <Card>
+        <Card className="border-zinc-800 bg-zinc-900/60 text-zinc-100">
           <CardHeader>
-            <CardTitle className="text-base">Segment diff</CardTitle>
+            <CardTitle className="text-base text-zinc-100">Segment diff</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm">
-            <p className="tabular-nums text-zinc-700">
+            <p className="tabular-nums text-zinc-400">
               Estimated token delta (after − before):{" "}
-              <strong>{(diff.data as DiffPayload).token_count_delta}</strong>
+              <strong className="text-zinc-100">{(diff.data as DiffPayload).token_count_delta}</strong>
             </p>
             <div className="grid gap-6 lg:grid-cols-2">
               <div>
@@ -125,20 +120,24 @@ function SegmentTable({ rows }: { rows: Record<string, unknown>[] }) {
   return (
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead>Type</TableHead>
-          <TableHead className="text-right">Tokens</TableHead>
-          <TableHead>Preview</TableHead>
+        <TableRow className="border-zinc-800 hover:bg-transparent">
+          <TableHead className="text-zinc-500">Type</TableHead>
+          <TableHead className="text-right text-zinc-500">Tokens</TableHead>
+          <TableHead className="text-zinc-500">Preview</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((r, i) => (
-          <TableRow key={i}>
+          <TableRow key={i} className="border-zinc-800 hover:bg-zinc-800/30">
             <TableCell>
-              <Badge variant="secondary">{String(r.segment_type ?? "")}</Badge>
+              <Badge variant="secondary" className="bg-zinc-800 text-zinc-200">
+                {String(r.segment_type ?? "")}
+              </Badge>
             </TableCell>
-            <TableCell className="text-right tabular-nums">{r.token_count != null ? String(r.token_count) : "—"}</TableCell>
-            <TableCell className="max-w-xs truncate text-xs text-zinc-700">{String(r.text_preview ?? "")}</TableCell>
+            <TableCell className="text-right tabular-nums text-zinc-300">
+              {r.token_count != null ? String(r.token_count) : "—"}
+            </TableCell>
+            <TableCell className="max-w-xs truncate text-xs text-zinc-400">{String(r.text_preview ?? "")}</TableCell>
           </TableRow>
         ))}
       </TableBody>
