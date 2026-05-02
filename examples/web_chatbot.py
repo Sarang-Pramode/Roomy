@@ -4,7 +4,7 @@ LangGraph ReAct agent: OpenAI chat + optional fetch_webpage tool for URL-grounde
 Run from repo root (with roomy + examples extras installed):
 
   cp examples/.env.example examples/.env   # then edit OPENAI_API_KEY
-  export ROOMY_DB_PATH="$PWD/examples/traces.db"
+  # Optional: export ROOMY_DB_PATH=... (default matches roomy serve: ./roomy_traces.db in cwd)
   python examples/web_chatbot.py
 
 Type messages at the prompt. Use /quit to exit.
@@ -87,7 +87,8 @@ def main() -> None:
         print("Missing OPENAI_API_KEY. Copy examples/.env.example to examples/.env and set your key.", file=sys.stderr)
         sys.exit(1)
 
-    db = os.environ.get("ROOMY_DB_PATH", str(_ROOT / "examples" / "traces.db"))
+    # Same default as `roomy serve` / RoomyConfig when ROOMY_DB_PATH is unset: cwd ./roomy_traces.db
+    db = os.environ.get("ROOMY_DB_PATH", "./roomy_traces.db")
     os.environ.setdefault("ROOMY_DB_PATH", db)
     Path(db).parent.mkdir(parents=True, exist_ok=True)
 
@@ -99,6 +100,7 @@ def main() -> None:
     cfg = {"callbacks": bindings.callbacks}
 
     print("Web-aware chatbot (LangGraph + OpenAI). Commands: /quit, /new")
+    print("Traces DB:", os.path.abspath(db), "(same file roomy serve must use)")
     print("Roomy session:", bindings.manager.session_id)
     print("Tip: ask about a page, e.g. “Summarize https://example.com”\n")
 

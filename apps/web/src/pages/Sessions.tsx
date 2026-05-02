@@ -10,7 +10,12 @@ function shortId(id: string) {
 }
 
 export function SessionsPage() {
-  const q = useQuery({ queryKey: ["sessions"], queryFn: fetchSessions });
+  const q = useQuery({
+    queryKey: ["sessions"],
+    queryFn: fetchSessions,
+    // Live-ish updates while agents run in another terminal (no manual refresh)
+    refetchInterval: 3000,
+  });
   if (q.isLoading) return <p className="p-6 text-sm text-zinc-500">Loading sessions…</p>;
   if (q.isError) return <p className="p-6 text-sm text-red-600">Failed to load sessions.</p>;
   const rows = q.data ?? [];

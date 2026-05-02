@@ -24,9 +24,16 @@ A **LangGraph** ReAct agent using **OpenAI** with a **`fetch_webpage`** tool so 
 
 ### Run the chatbot
 
+From the **repo root** (same working directory you use for `roomy serve`):
+
+```bash
+python examples/web_chatbot.py
+```
+
+By default this writes to **`./roomy_traces.db`** in the current directory — the same file `roomy serve` reads when you do **not** pass `--db` / `ROOMY_DB_PATH`. To use a different file (for example `examples/traces.db`), set the variable **for both** the API and the chatbot:
+
 ```bash
 export ROOMY_DB_PATH="$PWD/examples/traces.db"
-python examples/web_chatbot.py
 ```
 
 - **`/new`** — clear conversation  
@@ -44,8 +51,9 @@ roomy sessions show <session-id> --db "$ROOMY_DB_PATH"
 **Terminal 1 — traces API**
 
 ```bash
-export ROOMY_DB_PATH="$PWD/examples/traces.db"
-roomy serve --db "$ROOMY_DB_PATH" --host 127.0.0.1 --port 8765
+cd /path/to/Roomy   # repo root — same cwd as the chatbot terminal
+roomy serve --host 127.0.0.1 --port 8765
+# or: roomy serve --db "$PWD/examples/traces.db" ... if you prefer a dedicated DB file
 ```
 
 **Terminal 2 — React UI**
@@ -61,11 +69,11 @@ Open the URL Vite prints (e.g. `http://127.0.0.1:5173`). The dev server proxies 
 **Terminal 3 — chatbot**
 
 ```bash
-export ROOMY_DB_PATH="$PWD/examples/traces.db"
+cd /path/to/Roomy
 python examples/web_chatbot.py
 ```
 
-Use the same `ROOMY_DB_PATH` in all three so the UI shows the sessions your chatbot creates.
+Use the **same current directory** and the same `ROOMY_DB_PATH` (if you set it) for `roomy serve` and the chatbot so the UI reads the same SQLite file.
 
 ### Safety
 

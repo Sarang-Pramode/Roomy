@@ -7,16 +7,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export function SessionDetailPage() {
   const { sessionId = "" } = useParams();
-  const s = useQuery({ queryKey: ["session", sessionId], queryFn: () => fetchSession(sessionId), enabled: !!sessionId });
+  const s = useQuery({
+    queryKey: ["session", sessionId],
+    queryFn: () => fetchSession(sessionId),
+    enabled: !!sessionId,
+    refetchInterval: (query) => {
+      const d = query.state.data as Record<string, string> | undefined;
+      return d?.status === "running" ? 2000 : false;
+    },
+  });
+  const sessionStatus = (s.data as Record<string, string> | undefined)?.status;
   const steps = useQuery({
     queryKey: ["steps", sessionId],
     queryFn: () => fetchSteps(sessionId),
     enabled: !!sessionId,
+    refetchInterval: sessionStatus === "running" ? 2000 : false,
   });
   const findings = useQuery({
     queryKey: ["findings", sessionId],
     queryFn: () => fetchFindings(sessionId),
     enabled: !!sessionId,
+    refetchInterval: sessionStatus === "running" ? 4000 : false,
   });
 
   if (s.isLoading || steps.isLoading) return <p className="p-6 text-sm text-zinc-500">Loading…</p>;
