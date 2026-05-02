@@ -18,6 +18,10 @@ node_modules/
 apps/web/dist/
 *.local
 
+# Secrets (examples use .env for OpenAI keys)
+.env
+!.env.example
+
 # Traces / local DB
 *.db
 *.db-journal

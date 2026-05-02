@@ -11,6 +11,10 @@ pip install -e ".[dev,api,openai]"
 pytest
 ```
 
+## LangGraph + OpenAI example
+
+See [examples/README.md](../examples/README.md) (`web_chatbot.py`, `.env` for `OPENAI_API_KEY`).
+
 ## Run sample agent
 
 From repository root (after editable install):
